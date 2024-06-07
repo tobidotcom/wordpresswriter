@@ -69,20 +69,25 @@ def main():
     if st.button("Suggest Topics"):
         suggested_topics = suggest_topics(search_query)
 
-    topic = st.selectbox("Select a topic:", suggested_topics)
+    topic = st.session_state.get("topic", None)
+    word_count = st.session_state.get("word_count", 100)
+    keywords = st.session_state.get("keywords", "")
 
-    if topic:
-        word_count = st.number_input("Enter the desired word count:", min_value=100, step=50)
-        keywords = st.text_input("Enter SEO keywords (comma-separated):")
+    topic = st.selectbox("Select a topic:", suggested_topics, index=suggested_topics.index(topic) if topic in suggested_topics else 0)
+    word_count = st.number_input("Enter the desired word count:", min_value=100, step=50, value=word_count)
+    keywords = st.text_input("Enter SEO keywords (comma-separated):", value=keywords)
 
-        if st.button("Generate Article"):
-            if word_count and keywords:
-                keywords = [kw.strip() for kw in keywords.split(",")]
-                article = generate_blog_article(topic, word_count, keywords)
-                st.markdown(f"## Generated Blog Article on '{topic}'")
-                st.write(article)
-            else:
-                st.warning("Please fill in the word count and keywords.")
+    if st.button("Generate Article"):
+        if word_count and keywords:
+            keywords = [kw.strip() for kw in keywords.split(",")]
+            article = generate_blog_article(topic, word_count, keywords)
+            st.session_state["topic"] = topic
+            st.session_state["word_count"] = word_count
+            st.session_state["keywords"] = keywords
+            st.markdown(f"## Generated Blog Article on '{topic}'")
+            st.write(article)
+        else:
+            st.warning("Please fill in the word count and keywords.")
 
 if __name__ == "__main__":
     main()
