@@ -91,9 +91,6 @@ def main():
         if word_count and keywords:
             keywords = [kw.strip() for kw in keywords.split(",")]
             article = generate_blog_article(topic, word_count, keywords)
-            st.session_state["topic"] = topic
-            st.session_state["word_count"] = word_count
-            st.session_state["keywords"] = keywords
             st.markdown(f"## Generated Blog Article on '{topic}'")
             st.write(article)
         else:
@@ -101,3 +98,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
