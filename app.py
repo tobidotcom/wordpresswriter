@@ -2,7 +2,7 @@ import os
 from dotenv import load_dotenv
 import openai
 import streamlit as st
-from google_search_results import GoogleSearch
+import serpapi
 
 # Load environment variables from .env file
 load_dotenv()
@@ -12,11 +12,7 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 
 # Set up SerpApi client
 serpapi_api_key = os.getenv("SERPAPI_API_KEY")
-params = {
-    "engine": "google",
-    "api_key": serpapi_api_key
-}
-search = GoogleSearch(params)
+client = serpapi.Client(api_key=serpapi_api_key)
 
 def generate_blog_article(topic, word_count, keywords):
     prompt = f"Write a blog article on the topic '{topic}' with a word count of around {word_count} words. Include the following keywords: {', '.join(keywords)}."
@@ -34,8 +30,12 @@ def generate_blog_article(topic, word_count, keywords):
     return article
 
 def fetch_search_results(query):
-    params.update({"q": query})
-    search_results = search.get_dict()
+    params = {
+        "engine": "google",
+        "q": query,
+        "api_key": serpapi_api_key
+    }
+    search_results = client.search(params)
     return search_results
 
 def main():
@@ -61,4 +61,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
