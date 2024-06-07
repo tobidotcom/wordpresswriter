@@ -35,7 +35,7 @@ def generate_blog_article(topic, word_count, keywords):
         prompt=prompt,
         max_tokens=word_count * 2,
         n=1,
-        stop=None,
+        stop="",  # or remove the stop parameter entirely
         temperature=0.7,
     )
 
@@ -79,10 +79,13 @@ def main():
     topic_index = 0 if st.session_state["topic"] is None else suggested_topics.index(st.session_state["topic"])
     topic = st.selectbox("Select a topic:", suggested_topics, index=topic_index, key="topic_selectbox")
 
-    if topic != st.session_state["topic"]:
-        st.session_state["topic"] = topic
-        st.session_state["word_count"] = 100
-        st.session_state["keywords"] = ""
+    if topic in suggested_topics:
+        if topic != st.session_state["topic"]:
+            st.session_state["topic"] = topic
+            st.session_state["word_count"] = 100
+            st.session_state["keywords"] = ""
+    else:
+        st.session_state["topic"] = None
 
     word_count = st.number_input("Enter the desired word count:", min_value=100, step=50, value=st.session_state["word_count"], key="word_count_input")
     keywords = st.text_input("Enter SEO keywords (comma-separated):", value=st.session_state["keywords"], key="keywords_input")
@@ -98,4 +101,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
