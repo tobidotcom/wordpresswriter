@@ -22,7 +22,7 @@ def generate_blog_article(topic, word_count, keywords):
 
     # Extract relevant information from search results
     top_results = [result["title"] for result in search_results.get("organic_results", [])]
-    related_questions = [question["value"] for question in search_results.get("related_questions", [])]
+    related_questions = [question["query"] for question in search_results.get("related_questions", [])]
 
     # Construct the prompt with SerpAPI data
     prompt = f"Write a blog article on the topic '{topic}' with a word count of around {word_count} words. Include the following keywords: {', '.join(keywords)}.\n\n"
@@ -69,13 +69,23 @@ def main():
     if st.button("Suggest Topics"):
         suggested_topics = suggest_topics(search_query)
 
-    topic = st.session_state.get("topic", None)
-    word_count = st.session_state.get("word_count", 100)
-    keywords = st.session_state.get("keywords", "")
+    if "topic" not in st.session_state:
+        st.session_state["topic"] = None
+    if "word_count" not in st.session_state:
+        st.session_state["word_count"] = 100
+    if "keywords" not in st.session_state:
+        st.session_state["keywords"] = ""
 
-    topic = st.selectbox("Select a topic:", suggested_topics, index=suggested_topics.index(topic) if topic in suggested_topics else 0)
-    word_count = st.number_input("Enter the desired word count:", min_value=100, step=50, value=word_count)
-    keywords = st.text_input("Enter SEO keywords (comma-separated):", value=keywords)
+    topic_index = 0 if st.session_state["topic"] is None else suggested_topics.index(st.session_state["topic"])
+    topic = st.selectbox("Select a topic:", suggested_topics, index=topic_index, key="topic_selectbox")
+
+    if topic != st.session_state["topic"]:
+        st.session_state["topic"] = topic
+        st.session_state["word_count"] = 100
+        st.session_state["keywords"] = ""
+
+    word_count = st.number_input("Enter the desired word count:", min_value=100, step=50, value=st.session_state["word_count"], key="word_count_input")
+    keywords = st.text_input("Enter SEO keywords (comma-separated):", value=st.session_state["keywords"], key="keywords_input")
 
     if st.button("Generate Article"):
         if word_count and keywords:
