@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 import openai
 import streamlit as st
 import serpapi
+import re
 
 # Load environment variables from .env file
 load_dotenv()
@@ -15,12 +16,24 @@ serpapi_api_key = os.getenv("SERPAPI_API_KEY")
 client = serpapi.Client(api_key=serpapi_api_key)
 
 def generate_blog_article(topic, word_count, keywords):
-    prompt = f"Write a blog article on the topic '{topic}' with a word count of around {word_count} words. Include the following keywords: {', '.join(keywords)}."
+    # Fetch search results from SerpAPI
+    search_query = f"{topic} {' '.join(keywords)}"
+    search_results = fetch_search_results(search_query)
+
+    # Extract relevant information from search results
+    top_results = [result["title"] for result in search_results.get("organic_results", [])]
+    related_questions = [question["value"] for question in search_results.get("related_questions", [])]
+
+    # Construct the prompt with SerpAPI data
+    prompt = f"Write a blog article on the topic '{topic}' with a word count of around {word_count} words. Include the following keywords: {', '.join(keywords)}.\n\n"
+    prompt += f"Top search results for '{search_query}':\n\n" + "\n".join(top_results) + "\n\n"
+    prompt += f"Related questions:\n\n" + "\n".join(related_questions) + "\n\n"
+    prompt += "Blog article:"
 
     response = openai.Completion.create(
-        engine="text-davinci-003",
+        model="text-davinci-003",
         prompt=prompt,
-        max_tokens=word_count * 2,  # Adjust as needed
+        max_tokens=word_count * 2,
         n=1,
         stop=None,
         temperature=0.7,
@@ -38,28 +51,39 @@ def fetch_search_results(query):
     search_results = client.search(params)
     return search_results
 
+def suggest_topics(search_query):
+    search_results = fetch_search_results(search_query)
+    topics = []
+    for result in search_results.get("organic_results", []):
+        title = result["title"]
+        cleaned_title = re.sub(r'[^a-zA-Z0-9\s]', '', title)
+        topics.append(cleaned_title)
+    return list(set(topics))
+
 def main():
     st.title("Blog Article Writer with SERP Scraper")
 
-    topic = st.text_input("Enter the blog topic:")
-    word_count = st.number_input("Enter the desired word count:", min_value=100, step=50)
-    keywords = st.text_input("Enter SEO keywords (comma-separated):")
-    search_query = st.text_input("Enter a search query for SERP scraping:")
+    search_query = st.text_input("Enter a search query for topic suggestions:")
 
-    if st.button("Generate Article"):
-        if topic and word_count and keywords:
-            keywords = [kw.strip() for kw in keywords.split(",")]
-            article = generate_blog_article(topic, word_count, keywords)
-            st.markdown(f"## Generated Blog Article on '{topic}'")
-            st.write(article)
+    if st.button("Suggest Topics"):
+        suggested_topics = suggest_topics(search_query)
+        topic = st.selectbox("Select a topic:", suggested_topics)
+
+        if topic:
+            word_count = st.number_input("Enter the desired word count:", min_value=100, step=50)
+            keywords = st.text_input("Enter SEO keywords (comma-separated):")
+
+            if st.button("Generate Article"):
+                if word_count and keywords:
+                    keywords = [kw.strip() for kw in keywords.split(",")]
+                    article = generate_blog_article(topic, word_count, keywords)
+                    st.markdown(f"## Generated Blog Article on '{topic}'")
+                    st.write(article)
+                else:
+                    st.warning("Please fill in the word count and keywords.")
         else:
-            st.warning("Please fill in all the required fields.")
-
-    if search_query:
-        search_results = fetch_search_results(search_query)
-        st.write(search_results)
+            st.warning("Please select a topic from the suggestions.")
 
 if __name__ == "__main__":
     main()
-
 
