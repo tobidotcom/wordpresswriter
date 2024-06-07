@@ -31,7 +31,7 @@ def generate_blog_article(topic, word_count, keywords):
     prompt += "Blog article:"
 
     response = openai.Completion.create(
-        model="text-davinci-003",
+        model="gpt-3.5-turbo",
         prompt=prompt,
         max_tokens=word_count * 2,
         n=1,
@@ -64,26 +64,25 @@ def main():
     st.title("Blog Article Writer with SERP Scraper")
 
     search_query = st.text_input("Enter a search query for topic suggestions:")
+    suggested_topics = []
 
     if st.button("Suggest Topics"):
         suggested_topics = suggest_topics(search_query)
-        topic = st.selectbox("Select a topic:", suggested_topics)
 
-        if topic:
-            word_count = st.number_input("Enter the desired word count:", min_value=100, step=50)
-            keywords = st.text_input("Enter SEO keywords (comma-separated):")
+    topic = st.selectbox("Select a topic:", suggested_topics)
 
-            if st.button("Generate Article"):
-                if word_count and keywords:
-                    keywords = [kw.strip() for kw in keywords.split(",")]
-                    article = generate_blog_article(topic, word_count, keywords)
-                    st.markdown(f"## Generated Blog Article on '{topic}'")
-                    st.write(article)
-                else:
-                    st.warning("Please fill in the word count and keywords.")
-        else:
-            st.warning("Please select a topic from the suggestions.")
+    if topic:
+        word_count = st.number_input("Enter the desired word count:", min_value=100, step=50)
+        keywords = st.text_input("Enter SEO keywords (comma-separated):")
+
+        if st.button("Generate Article"):
+            if word_count and keywords:
+                keywords = [kw.strip() for kw in keywords.split(",")]
+                article = generate_blog_article(topic, word_count, keywords)
+                st.markdown(f"## Generated Blog Article on '{topic}'")
+                st.write(article)
+            else:
+                st.warning("Please fill in the word count and keywords.")
 
 if __name__ == "__main__":
     main()
-
